@@ -1,66 +1,90 @@
-"use client"
-import React from 'react'
-import logo from '@/assets/logo.png'
-import { IoIosBody } from 'react-icons/io'
-import './Navbar.css'
-import Image from 'next/image'
-import Link from 'next/link'
-import AuthPopup from '../AuthPopup/AuthPopup'
+"use client";
+import React from "react";
+import logo from "@/assets/logo.png";
+import { IoIosBody } from "react-icons/io";
+import "./Navbar.css";
+import Image from "next/image";
+import Link from "next/link";
+import AuthPopup from "../AuthPopup/AuthPopup";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
-    const [isloggedin, setIsloggedin] = React.useState<boolean>(false)
+  const [isloggedin, setIsloggedin] = React.useState<boolean>(false);
 
-    const [showpopup, setShowpopup] = React.useState<boolean>(false)
-    const checklogin = async () => {
-        fetch(process.env.NEXT_PUBLIC_BACKEND_API + '/auth/checklogin', {
-            method: 'POST',
-            credentials: 'include',
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log(data)
-                if (data.ok) {
-                    setIsloggedin(true)
-                }
-                else{
-                    setIsloggedin(false)
-                }
-            })
-            .catch(err => {
-                console.log(err)
-            })
-    }
+  const [showpopup, setShowpopup] = React.useState<boolean>(false);
+  const checklogin = async () => {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_API + "/auth/checklogin", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        if (data.ok) {
+          setIsloggedin(true);
+        } else {
+          setIsloggedin(false);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
+  const handleLogout = () => {
+    fetch(process.env.NEXT_PUBLIC_BACKEND_API + "/auth/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
 
-    React.useEffect(() => {
-        checklogin()
-    }, [showpopup])
+        if (data.ok) {
+          toast.success(data.message);
 
-    return (
-        <nav>
-            <Image src={logo} alt="Logo" />
-            <Link href='/'>Home</Link>
-            <Link href='/about'>About</Link>
-            <Link href='/profile'><IoIosBody /></Link>
-            {
-                isloggedin ?
-                    <button>Logout</button>
-                    :
-                    <button
-                        onClick={() => {
-                            setShowpopup(true)
-                        }}
-                    >Login</button>
+          setShowpopup(false);
+        } else {
+          toast.error(data.message);
+        }
+      })
+      .catch((err) => {
+        console.log("Error during logout", err);
+      });
+      // This can be Problematic
+      window.location.href = "/";
+  };
 
+  React.useEffect(() => {
+    checklogin();
+  }, [showpopup]);
 
+  return (
+    <nav>
+      <Image src={logo} alt="Logo" />
+      <Link href="/">Home</Link>
+      <Link href="/about">About</Link>
+      <Link href="/profile">
+        <IoIosBody />
+      </Link>
+      {isloggedin ? (
+        <button onClick={handleLogout}>Logout</button>
+      ) : (
+        <button
+          onClick={() => {
+            setShowpopup(true);
+          }}
+        >
+          Login
+        </button>
+      )}
 
-            }
+      {showpopup && <AuthPopup setShowpopup={setShowpopup} />}
+    </nav>
+  );
+};
 
-            {
-                showpopup && <AuthPopup setShowpopup={setShowpopup} />
-            }
-        </nav>
-    )
-}
-
-export default Navbar
+export default Navbar;

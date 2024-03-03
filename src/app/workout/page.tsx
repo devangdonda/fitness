@@ -2,10 +2,13 @@
 import React from "react";
 import "./workoutPage.css";
 import { useSearchParams } from "next/navigation";
+import WorkoutPopup from "@/components/ReportFormPopup/Workout/WorkoutPopup";
 
 const page = () => {
   const [workout, setWorkout] = React.useState<any>(null);
   const [data, setData] = React.useState<any>(null);
+  const [showWorkoutPopup, setShowWorkoutPopup] =
+    React.useState<boolean>(false);
   const searchParams = useSearchParams();
 
   const workoutid = searchParams.get("id");
@@ -92,7 +95,7 @@ const page = () => {
                   <h3>{index + 1}</h3>
                   <div className="workout__exercise__image">
                     {/*  Be carefull about imageURL */}
-                    <img src={item.imageURL} alt="" /> 
+                    <img src={item.imageURL} alt="" />
                   </div>
                   <div className="workout__exercise__content">
                     <h2>{item.name}</h2>
@@ -107,6 +110,8 @@ const page = () => {
           </div>
         </div>
       )}
+      {/*       {showWorkoutPopup && <WorkoutPopup setShowWorkoutPopup={setShowWorkoutPopup} getDetails={false}/>}
+       */}{" "}
     </>
   );
 };

@@ -5,6 +5,8 @@ import "./ReportPage.css";
 import { AiFillEdit } from "react-icons/ai";
 import CaloriIntakePopup from "@/components/ReportFormPopup/CalorieIntake/CalorieIntakePopup";
 import { usePathname } from "next/navigation";
+import WorkoutPopup from "@/components/ReportFormPopup/Workout/WorkoutPopup";
+import { toast } from "react-toastify";
 
 const page = () => {
   const color = "#ffc20e";
@@ -17,6 +19,10 @@ const page = () => {
   };
 
   const [dataS1, setDataS1] = React.useState<any>(null);
+  const [dataS2, setDataS2] = React.useState<any>(null);
+
+  const [workoutsNames, setWorkoutsNames] = React.useState<string[]>([""]);
+
   const getDataForS1 = async () => {
     if (pathname == "/report/Calorie%20Intake") {
       fetch(
@@ -148,16 +154,117 @@ const page = () => {
     }); */
   };
 
+  const getDataForS2 = async () => {
+    if (pathname == "/report/Workout") {
+      fetch(
+        process.env.NEXT_PUBLIC_BACKEND_API +
+          "/workouttrack/getworkoutsbylimit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            limit: 100,
+          }),
+        }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok) {
+            let temp = data.data.map((item: any) => {
+              return {
+                date: item.date,
+                name: item.name,
+                vol: item.reps * item.sets * item.weights,
+                durationInMinutes: item.durationInMinutes,
+              };
+            });
+
+            let dataForLineChart = temp.map((item: any) => {
+              let val = JSON.stringify(item.vol);
+              return { name: item.name, val };
+            });
+
+            let nameForLineChart = temp.map((item: any) => {
+              let val = JSON.stringify(item.name);
+              return val;
+            });
+
+            let dataForXAxis = temp.map((item: any) => {
+              let val = new Date(item.date);
+              return val;
+            });
+
+            setDataS2({
+              name: nameForLineChart,
+              data: dataForLineChart,
+              color: color,
+              xAxis: {
+                data: dataForXAxis,
+                label: "Last 10 Days",
+                scaleType: "time",
+              },
+            });
+          } else {
+            setDataS2([]);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  };
+
+  const getWorkoutList = async () => {
+    fetch(
+      process.env.NEXT_PUBLIC_BACKEND_API + "/workouttrack/getworkoutlist",
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) {
+          let workouts1 = data.data.exerciseNames;
+          console.log(workouts1);
+          /*   const exercises = workouts1.map((element: string[]) => (
+              ...element)
+            );
+          setWorkoutsNames(exercises);
+          console.log(workoutsNames) */
+          const exercises = [];
+          workouts1.forEach((element: string[]) => {
+            exercises.push(...element);
+          });
+          setWorkoutsNames(exercises.map((obj) => obj.name));
+          console.log(workoutsNames);
+        } else {
+          toast.error("Error in getting workout names");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Error in getting workout names");
+      });
+  };
+
   React.useEffect(() => {
     getDataForS1();
+    getDataForS2();
+    getWorkoutList();
   }, []);
 
   const [showCalorieIntakePopup, setShowCalorieIntakePopup] =
     React.useState<boolean>(false);
+  const [showWorkoutPopup, setShowWorkoutPopup] =
+    React.useState<boolean>(false);
 
   return (
     <div className="reportpage">
-      <div className="s1">
+      <div className="s" style={{ display: dataS1 ? "block" : "none" }}>
         {dataS1 && (
           <LineChart
             xAxis={[
@@ -182,11 +289,41 @@ const page = () => {
           />
         )}
       </div>
+      {dataS2 &&
+        workoutsNames.map((element, index) => (
+          <div className="s">
+            <LineChart
+              xAxis={[
+                {
+                  id: "Day",
+                  data: dataS2.xAxis.data,
+                  scaleType: dataS2.xAxis.scaleType,
+                  label: dataS2.xAxis.label,
+                  valueFormatter: (date: any) => {
+                    return date.getDate().toString();
+                  },
+                },
+              ]}
+              series={[
+                {
+                  data: dataS2.data
+                    .filter((obj) => obj.name === element) // Filter out data points that don't match the current element
+                    .map((obj) => obj.val),
+                  label: element,
+                  color: dataS2.color,
+                },
+              ]}
+              {...chartsParams}
+            />
+          </div>
+        ))}
       <button
         className="editbutton"
         onClick={() => {
           if (pathname === "/report/Calorie%20Intake") {
             setShowCalorieIntakePopup(true);
+          } else if (pathname === "/report/Workout") {
+            setShowWorkoutPopup(true);
           } else {
             // show popup for other reports
             alert("Show popup for other reports");
@@ -199,6 +336,13 @@ const page = () => {
       {showCalorieIntakePopup && (
         <CaloriIntakePopup
           setShowCalorieIntakePopup={setShowCalorieIntakePopup}
+        />
+      )}
+      {showWorkoutPopup && (
+        <WorkoutPopup
+          setShowWorkoutPopup={setShowWorkoutPopup}
+          getDetails={true}
+          workoutsNames={workoutsNames}
         />
       )}
     </div>

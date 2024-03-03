@@ -151,6 +151,7 @@ const CalorieIntakePopup: React.FC<CaloriIntakePopupProps> = ({
           className="close"
           onClick={() => {
             setShowCalorieIntakePopup(false);
+            window.location.reload();
           }}
         >
           <AiOutlineClose />

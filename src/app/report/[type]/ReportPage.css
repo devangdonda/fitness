@@ -29,6 +29,11 @@
     padding: 10px;
 }
 
+.reportpage .s{
+    width: 40%;
+    padding: 10px;
+}
+
 .reportpage .editbutton{
     position: fixed;
     bottom: 10px;
